@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Court | Budz Sports Hub</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+
+<body class="standalone-booking-page">
+    <div class="booking-widget-container">
+        <div class="booking-widget-card reveal visible">
+            <div class="widget-header">
+                <div class="widget-icon">🏀</div>
+                <div class="widget-title-area">
+                    <h2>Book a Court</h2>
+                    <p>Fill in the details to reserve your spot</p>
+                </div>
+            </div>
+
+            <form id="standaloneBookingForm" class="widget-form">
+                <div class="widget-row">
+                    <div class="widget-group">
+                        <label for="w-date">Date</label>
+                        <input type="date" id="w-date" name="date" required>
+                    </div>
+                    <div class="widget-group">
+                        <label for="w-sport">Sport</label>
+                        <select id="w-sport" name="sport" required>
+                            <option value="BADMINTON" selected>BADMINTON</option>
+                            <option value="PICKLEBALL">PICKLEBALL</option>
+                            <option value="BASKETBALL">BASKETBALL</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="widget-row widget-row-3">
+                    <div class="widget-group">
+                        <label for="w-hours">Hours</label>
+                        <select id="w-hours" name="hours" required>
+                            <option value="1 Hour" selected>1 Hour</option>
+                            <option value="2 Hours">2 Hours</option>
+                            <option value="3 Hours">3 Hours</option>
+                            <option value="4 Hours">4 Hours</option>
+                        </select>
+                    </div>
+                    <div class="widget-group">
+                        <label for="w-time">Available Play Time</label>
+                        <select id="w-time" name="time" required>
+                            <option value="08:00 AM" selected>08:00 AM</option>
+                            <option value="09:00 AM">09:00 AM</option>
+                            <option value="10:00 AM">10:00 AM</option>
+                            <option value="11:00 AM">11:00 AM</option>
+                            <option value="12:00 PM">12:00 PM</option>
+                            <option value="01:00 PM">01:00 PM</option>
+                            <option value="02:00 PM">02:00 PM</option>
+                            <option value="03:00 PM">03:00 PM</option>
+                            <option value="04:00 PM">04:00 PM</option>
+                            <option value="05:00 PM">05:00 PM</option>
+                            <option value="06:00 PM">06:00 PM</option>
+                            <option value="07:00 PM">07:00 PM</option>
+                            <option value="08:00 PM">08:00 PM</option>
+                            <option value="09:00 PM">09:00 PM</option>
+                            <option value="10:00 PM">10:00 PM</option>
+                            <option value="11:00 PM">11:00 PM</option>
+                            <option value="12:00 AM">12:00 AM (Midnight)</option>
+                            <option value="01:00 AM">01:00 AM</option>
+                        </select>
+                    </div>
+                    <div class="widget-group">
+                        <label for="w-rate">Rate</label>
+                        <select id="w-rate" name="rate" required>
+                            <option value="300">300</option>
+                            <option value="350">350</option>
+                            <option value="500" selected>500</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="widget-group full-width">
+                    <label for="w-name">Name</label>
+                    <input type="text" id="w-name" name="name" required>
+                </div>
+
+                <div class="widget-group full-width">
+                    <label for="w-email">Email</label>
+                    <input type="email" id="w-email" name="email" required>
+                </div>
+
+                <div class="widget-group full-width">
+                    <label for="w-mobile">Mobile Number</label>
+                    <input type="tel" id="w-mobile" name="mobile" required>
+                </div>
+
+                <div class="widget-checkbox-group">
+                    <input type="checkbox" id="w-waiver" name="waiver" required>
+                    <label for="w-waiver">I have read the <a href="#">Team Waiver of Liability and Release
+                            Agreement.</a></label>
+                </div>
+
+                <button type="submit" class="btn-widget-submit">Book Now</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal-card" style="color: white;">
+            <div class="modal-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                </svg>
+            </div>
+            <h3>Booking Confirmed!</h3>
+            <p style="margin-bottom: 12px;">Your court reservation has been submitted. We'll confirm it shortly!</p>
+            <div class="booking-number-badge">
+                <span class="booking-number-label">Your Booking #</span>
+                <span class="booking-number-value" id="bookingNumberDisplay">BSH-XXXXXX</span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 12px;">Screenshot or note this number for
+                reference.</p>
+            <button class="modal-close-btn" id="closeModal">Got It!</button>
+            <br><br>
+            <a href="index.html"
+                style="color: var(--accent); text-decoration: underline; margin-top: 20px; display: inline-block;">Return
+                to Home</a>
+        </div>
+    </div>
+
+    <script type="module" src="index.js"></script>
+</body>
+
+</html>

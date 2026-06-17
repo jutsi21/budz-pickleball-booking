@@ -1,0 +1,300 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Custom animations not expressible as pure Tailwind ---- */
+@keyframes bounceBall {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-30px); }
+}
+@keyframes bounceShadow {
+  from { transform: translateX(-50%) scaleX(1);   opacity: 0.4; }
+  to   { transform: translateX(-50%) scaleX(0.6); opacity: 0.15; }
+}
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 1;   }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.85) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---- Scroll Reveal ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1),
+              transform 0.65s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+.reveal-delay-1 { transition-delay: 0.08s; }
+.reveal-delay-2 { transition-delay: 0.16s; }
+.reveal-delay-3 { transition-delay: 0.24s; }
+.reveal-delay-4 { transition-delay: 0.32s; }
+
+/* ---- Preloader ball shadow ---- */
+.preloader-ball::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(245,197,24,0.2);
+  animation: bounceShadow 0.8s ease-in-out infinite alternate;
+}
+
+/* ---- Nav underline hover ---- */
+.nav-link-underline {
+  position: relative;
+  padding-bottom: 4px;
+}
+.nav-link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #f5c518;
+  transition: width 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.nav-link-underline:hover::after,
+.nav-link-underline.active::after {
+  width: 100%;
+}
+
+/* ---- Section label line ---- */
+.section-label-line::before {
+  content: '';
+  display: inline-block;
+  width: 30px;
+  height: 2px;
+  background: #f5c518;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* ---- Feature card top-border hover ---- */
+.feature-card-top::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: #f5c518;
+  transform: scaleX(0);
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.feature-card-top:hover::before {
+  transform: scaleX(1);
+}
+
+/* ---- Sport card image hide when src="" ---- */
+.sport-img-placeholder:not([src]),
+.sport-img-placeholder[src=""] {
+  display: none;
+}
+
+/* ---- Rates tab panel visibility ---- */
+.rates-panel { display: none; }
+.rates-panel.active { display: block; }
+
+/* ---- Hamburger animation ---- */
+.hamburger-open span:nth-child(1) { transform: rotate(45deg) translate(5px,6px); }
+.hamburger-open span:nth-child(2) { opacity: 0; }
+.hamburger-open span:nth-child(3) { transform: rotate(-45deg) translate(5px,-6px); }
+
+/* ---- Spinner ---- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.btn-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(6,14,30,0.3);
+  border-top-color: #060e1e;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* ---- Back to top ---- */
+.back-to-top {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+}
+.back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+/* ---- Scroll line ---- */
+.scroll-line {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, #f5c518, transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+
+/* ---- Parallax hero bg ---- */
+.hero-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
+}
+
+/* ---- Hero image accent ---- */
+.hero-image-accent {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 120px;
+  height: 120px;
+  border: 3px solid #f5c518;
+  border-radius: 28px;
+  z-index: -1;
+}
+
+/* ---- Gallery lightbox ---- */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  animation: fadeIn 0.3s ease;
+  padding: 40px;
+}
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: modalIn 0.4s cubic-bezier(0.16,1,0.3,1);
+  cursor: default;
+}
+
+/* ---- Modal ---- */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.active {
+  display: flex;
+}
+
+/* ---- Rates table ---- */
+.rates-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rates-table thead tr {
+  background: rgba(245,197,24,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.rates-table th {
+  padding: 14px 20px;
+  text-align: left;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.rates-table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.2s;
+}
+.rates-table tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+.rates-table td {
+  padding: 14px 20px;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+}
+.rates-table td.rate-highlight {
+  color: #f5c518;
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ---- Widget form inputs ---- */
+.widget-form input:not([type="checkbox"]),
+.widget-form select {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: white;
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.2s, background 0.2s;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.widget-form input:focus,
+.widget-form select:focus {
+  border-color: rgba(245,197,24,0.5);
+  background: rgba(255,255,255,0.09);
+  box-shadow: 0 0 0 3px rgba(245,197,24,0.08);
+}
+.widget-form select option {
+  background: #0a1628;
+  color: white;
+}
+.widget-form input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.5);
+  cursor: pointer;
+}
+
+/* ---- About section border top ---- */
+.about-section::before,
+.facilities-section::before,
+.rates-section::before,
+.contact-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #f5c518, transparent);
+}
