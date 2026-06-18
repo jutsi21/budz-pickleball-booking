@@ -38,12 +38,21 @@ export default function ProtectedRoute({ children }) {
     return (
       <div className="min-h-screen bg-navy-900 flex items-center justify-center p-6">
         <form onSubmit={handleLogin} className="w-full max-w-sm bg-navy-800 p-8 rounded-xl border border-white/10 shadow-lg">
-          <h2 className="text-2xl font-bold text-white mb-6 text-center">Admin Login</h2>
+          {/* Logo */}
+          <div className="flex justify-center mb-5">
+            <img
+              src="/images/logo.png"
+              alt="Budz Pickleball Logo"
+              className="h-20 w-auto object-contain drop-shadow-lg"
+            />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-1 text-center">Admin Login</h2>
+          <p className="text-white/40 text-sm text-center mb-6">Sign in to manage bookings</p>
           {error && <p className="text-red-400 text-sm mb-4 text-center">{error}</p>}
           <input
             type="email"
             placeholder="Email"
-            className="w-full mb-4 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+            className="w-full mb-4 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 outline-none focus:border-gold-500/50 transition-colors"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -51,12 +60,12 @@ export default function ProtectedRoute({ children }) {
           <input
             type="password"
             placeholder="Password"
-            className="w-full mb-6 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+            className="w-full mb-6 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 outline-none focus:border-gold-500/50 transition-colors"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button type="submit" className="w-full py-2 bg-gold-500 text-navy-900 font-bold rounded-lg hover:bg-gold-400">
+          <button type="submit" className="w-full py-2.5 bg-gold-500 text-navy-900 font-bold rounded-lg hover:bg-gold-400 transition-colors">
             Login
           </button>
         </form>
@@ -66,9 +75,13 @@ export default function ProtectedRoute({ children }) {
 
   return (
     <>
-      <div className="bg-navy-800 p-4 flex justify-between items-center border-b border-white/10">
-        <span className="text-white font-bold">Admin Panel</span>
-        <button onClick={() => signOut(auth)} className="text-sm text-white/70 hover:text-white">Logout</button>
+      <div className="bg-navy-800 px-4 py-2 flex justify-between items-center border-b border-white/10">
+        <img
+          src="/images/logo.png"
+          alt="Budz Pickleball"
+          className="h-10 w-auto object-contain"
+        />
+        <button onClick={() => signOut(auth)} className="text-sm text-white/70 hover:text-white transition-colors">Logout</button>
       </div>
       {children}
     </>
