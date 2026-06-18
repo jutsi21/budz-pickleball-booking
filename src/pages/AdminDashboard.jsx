@@ -16,6 +16,18 @@ const to24h = (timeStr) => {
   return h;
 };
 
+// Handles midnight wrap: e.g. start=18, end=0 means 18,19,20,21,22,23
+const isPrimeHour = (hour24, startHour, endHour) => {
+  if (startHour == null || endHour == null) return false;
+  if (startHour === endHour) return false; // no prime window
+  if (startHour < endHour) {
+    // Normal range: e.g. 17–22
+    return hour24 >= startHour && hour24 < endHour;
+  }
+  // Wrap-around range: e.g. 18–0 means 18..23
+  return hour24 >= startHour || hour24 < endHour;
+};
+
 const calcBookingTotal = (sport, startTime, hoursStr, rates, timeOpts) => {
   const h = parseInt((hoursStr || '1').split(' ')[0], 10) || 1;
   const startIdx = timeOpts.indexOf(startTime);
@@ -25,12 +37,8 @@ const calcBookingTotal = (sport, startTime, hoursStr, rates, timeOpts) => {
     const t = timeOpts[startIdx + i];
     if (!t) break;
     const hour24 = to24h(t);
-    const isPrime =
-      rates.primeStartHour != null &&
-      rates.primeEndHour != null &&
-      hour24 >= rates.primeStartHour &&
-      hour24 < rates.primeEndHour;
-    const rate = isPrime
+    const prime = isPrimeHour(hour24, rates.primeStartHour, rates.primeEndHour);
+    const rate = prime
       ? (rates.primeRates?.[sport] ?? rates[sport] ?? 0)
       : (rates[sport] ?? 0);
     total += rate;
@@ -765,18 +773,14 @@ export default function AdminDashboard() {
                 const available = modalAvailableCourtsMap[t] || [];
                 const isWarning = available.length === 0;
                 const hour24 = to24h(t);
-                const isPrime =
-                  ratesConfig.primeStartHour != null &&
-                  ratesConfig.primeEndHour != null &&
-                  hour24 >= ratesConfig.primeStartHour &&
-                  hour24 < ratesConfig.primeEndHour;
-                const slotRate = isPrime
+                const prime = isPrimeHour(hour24, ratesConfig.primeStartHour, ratesConfig.primeEndHour);
+                const slotRate = prime
                   ? (ratesConfig.primeRates?.[modalBooking.sport] ?? ratesConfig[modalBooking.sport] ?? 0)
                   : (ratesConfig[modalBooking.sport] ?? 0);
                 return (
                   <div key={t} className={`flex items-center justify-between p-3 rounded-lg border ${isWarning ? 'border-red-500/50 bg-red-500/10' : 'border-white/10 bg-navy-900/50'}`}>
                     <span className="text-white font-medium text-sm w-[100px]">{t}</span>
-                    {isPrime && (
+                    {prime && (
                       <span className="text-[0.65rem] font-bold text-gold-400 bg-gold-400/10 border border-gold-400/30 px-1.5 py-0.5 rounded-full ml-1">PRIME</span>
                     )}
                     <span className="text-white/50 text-xs ml-auto mr-3">₱{slotRate.toLocaleString()}</span>
