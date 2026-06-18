@@ -287,6 +287,10 @@
   cursor: pointer;
 }
 
+input[type="date"], input[type="time"] {
+  color-scheme: dark;
+}
+
 /* ---- About section border top ---- */
 .about-section::before,
 .facilities-section::before,

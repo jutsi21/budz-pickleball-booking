@@ -116,6 +116,16 @@ export default function Navbar() {
         {/* Book Now CTA */}
         <div className="hidden md:flex items-center gap-3">
           <Link
+            to="/status"
+            id="nav-status-btn"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-white/15 text-white/70 hover:text-white hover:border-white/30 font-semibold text-[0.9rem] transition-all duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            My Booking
+          </Link>
+          <Link
             to="/booking"
             id="nav-book-btn"
             className="inline-flex items-center gap-2 px-7 py-3 bg-gold-500 text-navy-900 font-display font-bold text-[0.95rem] uppercase tracking-[0.05em] border-2 border-gold-500 rounded-xl shadow-button transition-all duration-200 hover:bg-transparent hover:text-gold-500 hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(245,197,24,0.4)]"
@@ -165,6 +175,13 @@ export default function Navbar() {
               </Link>
             )
           )}
+          <Link
+            to="/status"
+            onClick={closeMenu}
+            className="mt-1 inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl border border-white/15 text-white/70 font-semibold text-[0.95rem]"
+          >
+            My Booking
+          </Link>
           <Link
             to="/booking"
             onClick={closeMenu}

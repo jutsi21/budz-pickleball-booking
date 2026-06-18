@@ -18,6 +18,13 @@ const sportCapacities = {
   BILLIARDS: 2,
 };
 
+const SPORT_EMOJI = {
+  BADMINTON: '🏸',
+  PICKLEBALL: '🏓',
+  BASKETBALL: '🏀',
+  BILLIARDS: '🎱',
+};
+
 const timeToHour24 = (timeStr) => {
   if (!timeStr) return 0;
   const [time, period] = timeStr.split(' ');
@@ -171,7 +178,9 @@ export default function BookingPage() {
 
       <div className="w-full max-w-[580px] bg-navy-700 border border-white/10 rounded-[24px] overflow-hidden shadow-lg mt-12">
         <div className="flex items-center gap-4 px-8 pt-8 pb-6 border-b border-white/10">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-gold-500/10 border border-gold-500/20">🏀</div>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-gold-500/10 border border-gold-500/20">
+            {SPORT_EMOJI[selectedSport] || '🏀'}
+          </div>
           <div>
             <h2 className="font-display text-[1.4rem] font-bold text-white">Book a Court</h2>
             <p className="text-[0.85rem] text-white/50 mt-0.5">Fill in the details to reserve your spot</p>
@@ -183,6 +192,7 @@ export default function BookingPage() {
             <div className="flex flex-col gap-1.5">
               <label htmlFor="w-date" className="text-[0.8rem] font-semibold text-white/60 uppercase">Date</label>
               <input type="date" id="w-date" name="date" min={minDate} required 
+                     className="[color-scheme:dark]"
                      value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -243,14 +253,34 @@ export default function BookingPage() {
               <select id="w-time" name="time" required
                       value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
                 {timeOptions.map((t) => {
-                  const isFull = (occupiedSlots[t] || 0) >= maxCapacity;
+                  const count = occupiedSlots[t] || 0;
+                  const isFull = count >= maxCapacity;
+                  const isLimited = count > 0 && count < maxCapacity;
+                  const label = isFull ? ' (Full)' : isLimited ? ' (Limited)' : '';
                   return (
                     <option key={t} value={t} disabled={isFull}>
-                      {t} {isFull ? '(Full)' : ''}
+                      {t}{label}
                     </option>
                   );
                 })}
               </select>
+              {/* Availability Legend */}
+              {selectedDate && (
+                <div className="flex gap-3 mt-2 flex-wrap">
+                  <span className="flex items-center gap-1 text-[0.72rem] text-white/50">
+                    <span className="w-2 h-2 rounded-full bg-green-400 inline-block"/>
+                    Available
+                  </span>
+                  <span className="flex items-center gap-1 text-[0.72rem] text-white/50">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 inline-block"/>
+                    Limited
+                  </span>
+                  <span className="flex items-center gap-1 text-[0.72rem] text-white/50">
+                    <span className="w-2 h-2 rounded-full bg-red-400 inline-block"/>
+                    Fully Booked
+                  </span>
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="w-rate" className="text-[0.8rem] font-semibold text-white/60 uppercase">Rate (₱)</label>
