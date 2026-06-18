@@ -235,10 +235,56 @@ export default function AdminDashboard() {
     }
   };
 
+  // ─── Auto-Expire Pending Bookings ─────────────────────────
+  const autoExpirePendingBookings = async () => {
+    try {
+      const q = query(collection(db, 'bookings'), where('status', '==', 'pending'));
+      const snap = await getDocs(q);
+      const now = new Date();
+      const expirePromises = [];
+
+      snap.docs.forEach(d => {
+        const b = d.data();
+        if (!b.date || !b.time) return;
+
+        // Parse booking end datetime
+        const bookingDate = b.date; // e.g. "2026-06-18"
+        const bookingTime = b.time; // e.g. "08:00 AM"
+        const hours = parseInt((b.hours || '1 Hour').split(' ')[0], 10) || 1;
+
+        // Convert 12h time to 24h
+        const [timePart, period] = bookingTime.split(' ');
+        let [h, m] = timePart.split(':').map(Number);
+        if (period === 'PM' && h !== 12) h += 12;
+        if (period === 'AM' && h === 12) h = 0;
+
+        // Build the end datetime (start + duration)
+        const endDate = new Date(`${bookingDate}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`);
+        endDate.setHours(endDate.getHours() + hours);
+
+        if (endDate < now) {
+          expirePromises.push(
+            updateDoc(doc(db, 'bookings', d.id), { status: 'expired' })
+          );
+        }
+      });
+
+      if (expirePromises.length > 0) {
+        await Promise.all(expirePromises);
+        console.log(`Auto-expired ${expirePromises.length} pending booking(s)`);
+      }
+    } catch (err) {
+      console.error('Error auto-expiring bookings:', err);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'bookings') {
-      fetchBookingsList(bookingTab);
-      fetchStats();
+      // Auto-expire first, then fetch fresh data
+      autoExpirePendingBookings().then(() => {
+        fetchBookingsList(bookingTab);
+        fetchStats();
+      });
       fetchRatesConfig(); // needed for cost calculation in confirm modal
     } else if (activeTab === 'schedule') {
       fetchConfirmedBookings();
