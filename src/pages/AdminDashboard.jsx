@@ -5,6 +5,38 @@ import { db } from '../lib/firebase.js';
 // ─── Constants ───────────────────────────────────────────────
 const sportCapacities = { BADMINTON: 4, PICKLEBALL: 4, BASKETBALL: 1, BILLIARDS: 2 };
 const sportsList = ['BADMINTON', 'PICKLEBALL', 'BASKETBALL', 'BILLIARDS'];
+
+// ─── Helpers ──────────────────────────────────────────────────
+const to24h = (timeStr) => {
+  if (!timeStr) return 0;
+  const [time, period] = timeStr.split(' ');
+  let [h] = time.split(':').map(Number);
+  if (period === 'PM' && h !== 12) h += 12;
+  if (period === 'AM' && h === 12) h = 0;
+  return h;
+};
+
+const calcBookingTotal = (sport, startTime, hoursStr, rates, timeOpts) => {
+  const h = parseInt((hoursStr || '1').split(' ')[0], 10) || 1;
+  const startIdx = timeOpts.indexOf(startTime);
+  if (startIdx === -1) return 0;
+  let total = 0;
+  for (let i = 0; i < h; i++) {
+    const t = timeOpts[startIdx + i];
+    if (!t) break;
+    const hour24 = to24h(t);
+    const isPrime =
+      rates.primeStartHour != null &&
+      rates.primeEndHour != null &&
+      hour24 >= rates.primeStartHour &&
+      hour24 < rates.primeEndHour;
+    const rate = isPrime
+      ? (rates.primeRates?.[sport] ?? rates[sport] ?? 0)
+      : (rates[sport] ?? 0);
+    total += rate;
+  }
+  return total;
+};
 const timeOptions = [
   '08:00 AM','09:00 AM','10:00 AM','11:00 AM','12:00 PM',
   '01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM',
@@ -207,6 +239,7 @@ export default function AdminDashboard() {
     if (activeTab === 'bookings') {
       fetchBookingsList(bookingTab);
       fetchStats();
+      fetchRatesConfig(); // needed for cost calculation in confirm modal
     } else if (activeTab === 'schedule') {
       fetchConfirmedBookings();
     } else if (activeTab === 'rates') {
@@ -677,7 +710,7 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-3 mb-8">
+            <div className="flex flex-col gap-3 mb-6">
               <h3 className="text-white font-semibold mb-1">Assign Courts by Hour</h3>
               {Array.from({ length: parseInt(modalEditHours.split(' ')[0], 10) || 1 }).map((_, i) => {
                 const startIdx = timeOptions.indexOf(modalEditTime);
@@ -685,9 +718,22 @@ export default function AdminDashboard() {
                 if (!t) return <div key={i} className="text-red-400 text-sm">Time extends beyond closing.</div>;
                 const available = modalAvailableCourtsMap[t] || [];
                 const isWarning = available.length === 0;
+                const hour24 = to24h(t);
+                const isPrime =
+                  ratesConfig.primeStartHour != null &&
+                  ratesConfig.primeEndHour != null &&
+                  hour24 >= ratesConfig.primeStartHour &&
+                  hour24 < ratesConfig.primeEndHour;
+                const slotRate = isPrime
+                  ? (ratesConfig.primeRates?.[modalBooking.sport] ?? ratesConfig[modalBooking.sport] ?? 0)
+                  : (ratesConfig[modalBooking.sport] ?? 0);
                 return (
                   <div key={t} className={`flex items-center justify-between p-3 rounded-lg border ${isWarning ? 'border-red-500/50 bg-red-500/10' : 'border-white/10 bg-navy-900/50'}`}>
                     <span className="text-white font-medium text-sm w-[100px]">{t}</span>
+                    {isPrime && (
+                      <span className="text-[0.65rem] font-bold text-gold-400 bg-gold-400/10 border border-gold-400/30 px-1.5 py-0.5 rounded-full ml-1">PRIME</span>
+                    )}
+                    <span className="text-white/50 text-xs ml-auto mr-3">₱{slotRate.toLocaleString()}</span>
                     <select className="px-3 py-1.5 bg-navy-900 border border-white/20 rounded-md text-white text-sm outline-none focus:border-gold-500 w-[140px]"
                       value={modalAssignedCourts[t] || ''} onChange={e => setModalAssignedCourts({ ...modalAssignedCourts, [t]: e.target.value })}>
                       <option value="" disabled>Select Court</option>
@@ -697,6 +743,27 @@ export default function AdminDashboard() {
                 );
               })}
             </div>
+
+            {/* ── Total Amount to Pay ── */}
+            {(() => {
+              const total = calcBookingTotal(modalBooking.sport, modalEditTime, modalEditHours, ratesConfig, timeOptions);
+              const hours = parseInt((modalEditHours || '1').split(' ')[0], 10) || 1;
+              return (
+                <div className="mb-6 p-4 rounded-xl border border-gold-500/30 bg-gold-500/5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-0.5">Total Amount to Pay</p>
+                      <p className="text-white/40 text-xs">{hours} hr{hours > 1 ? 's' : ''} · {modalBooking.sport}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-extrabold text-gold-400">₱{total.toLocaleString()}</p>
+                      <p className="text-white/30 text-xs">incl. prime time where applicable</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="flex justify-end gap-3">
               <button onClick={closeConfirmModal} className="px-6 py-2 rounded-lg font-bold text-white hover:bg-white/10 transition-colors">Cancel</button>
               <button onClick={handleSaveModal} disabled={modalSaving} className="px-6 py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition-colors shadow-lg disabled:opacity-70">
