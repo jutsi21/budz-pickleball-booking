@@ -76,7 +76,7 @@ export default function Navbar() {
     <nav
       id="navbar"
       className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-500 ${
-        scrolled
+        scrolled || menuOpen
           ? 'bg-navy-900/95 backdrop-blur-xl py-[10px] shadow-[0_4px_30px_rgba(0,0,0,0.3)]'
           : 'bg-transparent py-4'
       }`}
@@ -154,8 +154,8 @@ export default function Navbar() {
       {/* Mobile Menu Dropdown */}
       {menuOpen && (
         <div
-          id="navLinks"
-          className="md:hidden absolute top-full left-0 right-0 bg-navy-900/98 backdrop-blur-xl border-t border-white/10 flex flex-col py-6 px-6 gap-5"
+          id="mobileNavLinks"
+          className="md:hidden absolute top-full left-0 right-0 bg-navy-900/95 backdrop-blur-xl border-t border-white/10 flex flex-col py-6 px-6 gap-5 z-[1000]"
         >
           {navItems.map(({ href, label }) =>
             isHomePage ? (

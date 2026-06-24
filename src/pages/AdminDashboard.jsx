@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, getDocs, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, getDoc, setDoc, orderBy, limit, startAfter, getCountFromServer } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 
 // ─── Constants ───────────────────────────────────────────────
@@ -92,8 +92,14 @@ export default function AdminDashboard() {
 
   // ── Bookings ──
   const [bookingTab, setBookingTab] = useState('pending');
-  const [allBookings, setAllBookings] = useState([]); // all bookings for current tab (pre-filter)
+  const [allBookings, setAllBookings] = useState([]); // bookings for current tab
   const [loading, setLoading] = useState(true);
+
+  // ── Pagination (Historical Tabs) ──
+  const [page, setPage] = useState(1);
+  const [limitCount, setLimitCount] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [cursors, setCursors] = useState([]); // Array to hold last visible doc of each page
 
   // ── Search & Filter ──
   const [searchQuery, setSearchQuery] = useState('');
@@ -170,19 +176,57 @@ export default function AdminDashboard() {
   };
 
   // ─── Fetch Bookings List ──────────────────────────────────
-  const fetchBookingsList = async (status) => {
+  const fetchBookingsList = async (status, newPage = 1, currentLimit = limitCount) => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'bookings'), where('status', '==', status));
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      // Sort newest first
-      data.sort((a, b) => {
-        const ta = a.createdAt?.toDate?.() || new Date(0);
-        const tb = b.createdAt?.toDate?.() || new Date(0);
-        return tb - ta;
-      });
-      setAllBookings(data);
+      const isHistorical = ['rejected', 'expired', 'completed'].includes(status);
+      
+      if (isHistorical) {
+        let baseQ = query(collection(db, 'bookings'), where('status', '==', status));
+        
+        if (newPage === 1) {
+          const snapshot = await getCountFromServer(baseQ);
+          setTotalCount(snapshot.data().count);
+          setCursors([]); 
+        }
+
+        let q = query(baseQ, orderBy('createdAt', 'desc'), limit(currentLimit));
+        
+        if (newPage > 1) {
+          const cursorDoc = cursors[newPage - 2];
+          if (cursorDoc) {
+             q = query(baseQ, orderBy('createdAt', 'desc'), startAfter(cursorDoc), limit(currentLimit));
+          }
+        }
+
+        const querySnapshot = await getDocs(q);
+        const data = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        
+        if (querySnapshot.docs.length > 0) {
+           const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+           if (newPage > cursors.length) {
+              setCursors(prev => {
+                const newCursors = [...prev];
+                newCursors[newPage - 1] = lastDoc;
+                return newCursors;
+              });
+           }
+        }
+
+        setAllBookings(data);
+        setPage(newPage);
+        setLimitCount(currentLimit);
+      } else {
+        const q = query(collection(db, 'bookings'), where('status', '==', status));
+        const querySnapshot = await getDocs(q);
+        const data = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        data.sort((a, b) => {
+          const ta = a.createdAt?.toDate?.() || new Date(0);
+          const tb = b.createdAt?.toDate?.() || new Date(0);
+          return tb - ta;
+        });
+        setAllBookings(data);
+      }
     } catch (err) {
       console.error(`Error fetching ${status} bookings:`, err);
     } finally {
@@ -290,7 +334,9 @@ export default function AdminDashboard() {
     if (activeTab === 'bookings') {
       // Auto-expire first, then fetch fresh data
       autoExpirePendingBookings().then(() => {
-        fetchBookingsList(bookingTab);
+        setPage(1);
+        setCursors([]);
+        fetchBookingsList(bookingTab, 1, limitCount);
         fetchStats();
       });
       fetchRatesConfig(); // needed for cost calculation in confirm modal
@@ -299,14 +345,19 @@ export default function AdminDashboard() {
     } else if (activeTab === 'rates') {
       fetchRatesConfig();
     }
-  }, [activeTab, bookingTab, scheduleDate, scheduleSport]);
+  }, [activeTab, scheduleDate, scheduleSport]); // Removed bookingTab dependency to prevent double fetch
 
-  // Reset filters when switching tabs
+  // Handle booking tab switch
   useEffect(() => {
-    setSearchQuery('');
-    setFilterDate('');
-    setFilterSport('');
-  }, [bookingTab]);
+    if (activeTab === 'bookings') {
+      setSearchQuery('');
+      setFilterDate('');
+      setFilterSport('');
+      setPage(1);
+      setCursors([]);
+      fetchBookingsList(bookingTab, 1, limitCount);
+    }
+  }, [bookingTab, activeTab]);
 
   // ─── Courts ───────────────────────────────────────────────
   const getCourtOptions = (sport) => {
@@ -613,6 +664,46 @@ export default function AdminDashboard() {
                 ))}
               </div>
             )}
+
+            {/* ── Pagination Footer (Historical Tabs) ── */}
+            {['rejected', 'expired', 'completed'].includes(bookingTab) && totalCount > 0 && !loading && (
+              <div className="flex flex-col md:flex-row items-center justify-between border-t border-white/10 pt-5 mt-6 px-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-white/50">Rows per page:</span>
+                  <select
+                    className="bg-navy-900 border border-white/20 text-white text-sm rounded-lg px-2 py-1.5 outline-none focus:border-gold-500 cursor-pointer"
+                    value={limitCount}
+                    onChange={(e) => fetchBookingsList(bookingTab, 1, Number(e.target.value))}
+                  >
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-5">
+                  <span className="text-sm text-white/50">
+                    Showing {(page - 1) * limitCount + 1}-{Math.min(page * limitCount, totalCount)} of {totalCount}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fetchBookingsList(bookingTab, page - 1, limitCount)}
+                      disabled={page === 1}
+                      className="p-1.5 rounded-lg text-white/50 hover:text-white bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button
+                      onClick={() => fetchBookingsList(bookingTab, page + 1, limitCount)}
+                      disabled={page * limitCount >= totalCount}
+                      className="p-1.5 rounded-lg text-white/50 hover:text-white bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -855,7 +946,16 @@ export default function AdminDashboard() {
 // ─── Booking Card Component ───────────────────────────────────
 function BookingCard({ booking, bookingTab, noteEditId, noteText, noteSaving, setNoteText, startEditNote, saveNote, cancelEditNote, promptUpdateStatus, openConfirmModal }) {
   const [noteOpen, setNoteOpen] = useState(false);
+  const [copiedField, setCopiedField] = useState(null);
   const isEditingNote = noteEditId === booking.id;
+
+  const handleCopy = async (text, field) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch { /* ignore */ }
+  };
 
   return (
     <div className="bg-navy-800 rounded-xl border border-white/10 overflow-hidden">
@@ -873,7 +973,33 @@ function BookingCard({ booking, bookingTab, noteEditId, noteText, noteSaving, se
             <span className="text-white/40 mx-2">·</span>
             {booking.date} @ {booking.time} ({booking.hours})
           </p>
-          <p className="text-white/50 text-xs mb-2">{booking.mobile} · {booking.email}</p>
+          <div className="text-white/50 text-xs mb-2 flex items-center gap-3">
+            <span className="flex items-center gap-1.5 group relative">
+              {booking.mobile}
+              {bookingTab === 'pending' && (
+                <button onClick={() => handleCopy(booking.mobile, 'mobile')} className="text-white/30 hover:text-gold-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Copy Phone Number">
+                  {copiedField === 'mobile' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  )}
+                </button>
+              )}
+            </span>
+            <span className="text-white/20">|</span>
+            <span className="flex items-center gap-1.5 group relative">
+              {booking.email}
+              {bookingTab === 'pending' && (
+                <button onClick={() => handleCopy(booking.email, 'email')} className="text-white/30 hover:text-gold-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Copy Email">
+                  {copiedField === 'email' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  )}
+                </button>
+              )}
+            </span>
+          </div>
           {booking.status === 'confirmed' && booking.assignedCourts && (
             <p className="text-xs font-semibold text-green-400">
               Courts: {booking.assignedCourts.map(ac => `${ac.time} → ${ac.court}`).join(', ')}
